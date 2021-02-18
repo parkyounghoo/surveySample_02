@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.kpcdt.dao.SurveyDAO">
+	<select id="getSurvey"
+		parameterType="kr.co.kpcdt.model.Survey"
+		resultType="kr.co.kpcdt.model.Survey">
+		select 
+			*
+			,(select cap_result from cap_result where result_id = #{id} and cap_code = capCode and cap_list_no = capListNo order by create_date desc limit 1) as capResult
+		from(
+			select 
+				ROW_NUMBER() OVER(ORDER BY a.cap_code, a.cap_list_no) AS capOrder 
+				,b.cap_name as capName
+				,a.cap_code as capCode
+				,a.cap_list_no as capListNo
+				,a.cap_list_name as capListName
+			from cap_list a
+			inner join cap_code b
+			on a.cap_code = b.cap_code
+			where b.cap_upper_code = #{capCode}
+			and b.cap_code not in ('3300','3301','3302','3303','3304','4300','4301')
+			)a 
+		where capOrder = #{capOrder};
+	</select>
+	
+	<select id="getSurveyTotalCount"
+		parameterType="kr.co.kpcdt.model.Survey"
+		resultType="kr.co.kpcdt.model.Survey">
+		select 
+			count(*) as capTotalCount
+			,(
+				select
+					count(*) 
+				from
+				(
+					select 
+						result_id, a.cap_code, cap_list_no
+					from cap_result a
+					inner join cap_code b
+					on a.cap_code = b.cap_code
+					where b.cap_code not in ('3300','3301','3302','3303','3304','4300','4301')
+					and b.cap_upper_code = #{capCode}
+					and a.result_id = #{id}
+					group by result_id, a.cap_code, cap_list_no
+				) a
+			 ) as capResultCount
+		from cap_list a
+		inner join cap_code b
+		on a.cap_code = b.cap_code
+		where b.cap_upper_code = #{capCode}
+		and b.cap_code not in ('3300','3301','3302','3303','3304','4300','4301');
+	</select>
+	
+	<select id="SurveyList"
+		parameterType="kr.co.kpcdt.model.Survey"
+		resultType="kr.co.kpcdt.model.Survey">
+		select 
+			a.cap_upper_code as capCode 
+			,sum(a.cap_cnt) as capTotalCount
+			,coalesce(b.cap_result_cnt,0) as capResultCount
+			,(case when sum(a.cap_cnt) = coalesce(CAP_RESULT_CNT,0) then 'Y' else 'N' end) as resultYn
+		FROM CAP_CODE A
+		left outer join
+		(
+			select 
+				b.cap_upper_code,
+				count(*) as cap_result_cnt
+			from (select cap_code,cap_list_no from cap_result where result_id =#{id} group by cap_code,cap_list_no) a
+			inner join cap_code b
+			on a.cap_code = b.cap_code
+			group by cap_upper_code
+		) b
+		on a.cap_upper_code = b.cap_upper_code
+		where a.cap_code not in ('3300','3301','3302','3303','3304','4300','4301')
+		and a.cap_upper_code != 'M'
+		group by a.cap_upper_code, b.cap_result_cnt
+		order by a.cap_upper_code;
+	</select>
+
+	<insert id="resultInsert">
+		INSERT INTO
+		cap_result (result_id,cap_code,cap_list_no,cap_result,create_date)
+		VALUES
+		(
+		#{id}, #{capCode}, #{capListNo}, #{capResult}, #{createDate}
+		);
+	</insert>
+</mapper>

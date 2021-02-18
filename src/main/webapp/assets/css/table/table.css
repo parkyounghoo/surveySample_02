@@ -1,0 +1,24 @@
+.table-responsive2 {
+width:100%;
+margin-bottom:15px;
+overflow-x:auto;
+overflow-y:hidden;
+-webkit-overflow-scrolling:touch;
+-ms-overflow-style:-ms-autohiding-scrollbar;
+border:1px solid #ddd
+}
+
+.table-responsive2 table {
+    table-layout: fixed;
+}
+.tableheader {
+	width: 2549px;
+	margin-bottom:0px;
+	border:1px solid #999;
+}
+.tablebody {
+	height: 400px;
+	overflow-y: auto;
+	width: 2565px;
+	margin-bottom:20px;
+}

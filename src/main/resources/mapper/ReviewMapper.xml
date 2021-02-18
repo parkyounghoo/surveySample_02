@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.kpcdt.dao.ReviewDAO">
+	<select id="AbilityEvl" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select
+			*
+			,(select 
+					result_desc 
+				from cap_result_desc
+				where left(cap_code,1) = capCode
+				and measu_id = (select measu_id from cap_measu_range where start_value < resultavg and end_value >= resultavg)
+			  ) as capResultText
+		from
+		(
+			select
+				*
+				,(select range_text from cap_measu_range where start_value <= coalesce(resultAvg,0) and end_value > coalesce(resultAvg,0)) as rangeText
+				,(select user_comp_name from cap_user where user_id = #{id}) as userCompName
+			from
+			(
+				select 
+					left(a.cap_code,1) as capCode, 
+					round(avg(a.cap_result),1) as resultAvg
+				from cap_result a
+				where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								group by result_id, a.cap_code, cap_list_no
+								)
+				and cap_result != 0		
+				group by left(a.cap_code,1)
+			) a	
+		) a
+		order by capCode
+	]]>
+	</select>
+	<select id="AbilityEvlDetail" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+		select
+			a.cap_code as capCode
+			, coalesce(resultAvg,0) as resultAvg
+			, a.cap_name as capName
+		from cap_code a
+		left outer join 
+		(
+			select 
+				a.cap_code
+				,round(avg(a.cap_result),1) as resultAvg
+			from cap_result a
+			where a.seq_no in(
+							select 
+								max(seq_no) as seq_no
+							from cap_result a
+							where a.result_id = #{id}
+							and left(cap_code,1) = #{capCode}
+							group by result_id, a.cap_code, cap_list_no
+							)
+			and cap_result != 0		
+			group by a.cap_code
+		) b
+		on a.cap_code = b.cap_code
+		where cap_upper_code != 'M' 
+		and left(a.cap_code,1) = #{capCode}
+		and a.cap_code not in ('3100','3200','4100','4200','3300','3301','3302','3303','3304','4300','4301','3201','3202','3203','3204','4201')
+		order by a.cap_code;
+	</select>
+	<select id="getrangeText" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select 
+			capCode
+			,resultAvg
+			,(case when resultAvg = 0 then '해당 없음' else range end) as rangeText
+		from 
+		(
+			select
+				a.cap_code as capCode
+				, coalesce(resultAvg,0) as resultAvg
+				, a.cap_name as capName
+				,(select range_text from cap_measu_range where start_value <= coalesce(resultAvg,0) and end_value > coalesce(resultAvg,0)) as range
+			from cap_code a
+			left outer join 
+			(
+				select 
+					a.cap_code
+					,round(avg(a.cap_result),1) as resultAvg
+				from cap_result a
+				where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								group by result_id, a.cap_code, cap_list_no
+								)
+				and cap_result != 0		
+				group by a.cap_code
+			) b
+			on a.cap_code = b.cap_code
+			where cap_upper_code != 'M' 
+			and a.cap_code not in ('3100','3200','4100','4200','3300','3301','3302','3303','3304','4300','4301','3201','3202','3203','3204','4201')
+		) a
+		order by a.capCode;
+	]]>
+	</select>
+	<select id="getrangeParentText" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select
+			*
+			,(select range_text from cap_measu_range where start_value <= coalesce(resultAvg,0) and end_value > coalesce(resultAvg,0)) as rangeText
+		from
+		(
+			select 
+				left(capCode,1) as capCode
+				,round(sum(resultAvg)/count(*),1) as resultAvg
+			from 
+			(
+				select
+					a.cap_code as capCode
+					, coalesce(resultAvg,0) as resultAvg
+					, a.cap_name as capName
+				from cap_code a
+				left outer join 
+				(
+					select 
+						a.cap_code
+						,avg(a.cap_result) as resultAvg
+					from cap_result a
+					where a.seq_no in(
+									select 
+										max(seq_no) as seq_no
+									from cap_result a
+									where a.result_id = #{id}
+									group by result_id, a.cap_code, cap_list_no
+									)
+					and cap_result != 0		
+					group by a.cap_code
+				) b
+				on a.cap_code = b.cap_code
+				where cap_upper_code != 'M' 
+				and a.cap_code not in ('3100','3200','4100','4200','3300','3301','3302','3303','3304','4300','4301','3201','3202','3203','3204','4201')
+			) a
+			where resultAvg != 0
+			group by left(capCode,1)
+		) a
+		order by left(capCode,1);
+	]]>
+	</select>
+	<select id="getrangeLevelText" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select
+			*
+			,(select range_text from cap_measu_range where start_value <= coalesce(resultAvg,0) and end_value > coalesce(resultAvg,0)) as rangeText
+		from
+		(
+			select 
+				left(a.capCode,2) as capCode
+				,round(sum(resultAvg)/count(*),1) as resultAvg
+			from 
+			(
+				select
+					a.cap_code as capCode
+					, coalesce(resultAvg,0) as resultAvg
+					, a.cap_name as capName
+				from cap_code a
+				left outer join 
+				(
+					select 
+						a.cap_code
+						,avg(a.cap_result) as resultAvg
+					from cap_result a
+					where a.seq_no in(
+									select 
+										max(seq_no) as seq_no
+									from cap_result a
+									where a.result_id = #{id}
+									group by result_id, a.cap_code, cap_list_no
+									)
+					and cap_result != 0		
+					group by a.cap_code
+				) b
+				on a.cap_code = b.cap_code
+				where cap_upper_code != 'M' 
+				and a.cap_code not in ('3100','3200','4100','4200','3300','3301','3302','3303','3304','4300','4301','3201','3202','3203','3204','4201')
+			) a
+			where left(a.capCode,2) in ('31','32','41','42')
+			and resultAvg != 0
+			group by left(a.capCode,2)
+		) a
+		order by left(a.capCode,2);
+	]]>
+	</select>
+	<select id="getCmprList" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select 
+			a.seq_no as seqNo
+			,a.capResult as capResultA
+			,b.capResult as capResultB
+			,(a.capResult-b.capResult) as capResultMinus
+			,c.cap_list_name as capListName
+		from (
+			select 
+				(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+				,cap_code as capCode
+				,cap_result as capResult
+			from cap_result a
+			where a.seq_no in(
+							select 
+								max(seq_no) as seq_no
+							from cap_result a
+							where a.result_id = #{id}
+							and cap_code = '4102'
+							and cap_list_no < 8
+							group by result_id, a.cap_code, cap_list_no
+							)
+		) a
+		join (
+			select 
+				(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+				,left(cap_code,2) as capCode
+				,cap_result as capResult
+			from cap_result a
+			where a.seq_no in(
+							select 
+								max(seq_no) as seq_no
+							from cap_result a
+							where a.result_id = #{id}
+							and left(cap_code,2) = '42'
+							group by result_id, a.cap_code, cap_list_no
+							)
+		) b
+		on a.seq_no = b.seq_no
+		join (
+			select 
+				* 
+			from cap_list where left(cap_code,2) = '43'
+		) c
+		on a.seq_no = c.cap_list_no
+		order  by capResultMinus
+	]]>
+	</select>
+	<select id="getCmprList2" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select 
+			cap_code as capCode
+			,cap_result as capResult
+		from cap_result a
+		where a.seq_no in(
+						select 
+							max(seq_no) as seq_no
+						from cap_result a
+						where a.result_id = #{id}
+						and cap_code = '4102'
+						and cap_list_no < 8
+						group by result_id, a.cap_code, cap_list_no
+						)
+		order by cap_code, cap_list_no
+	]]>
+	</select>
+	<select id="getCmprAsc" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+		select
+			a.seq_no as seqNo
+			,a.capResult as capResultA
+			,b.capResult as capResultB
+			,(a.capResult - b.capResult) as capResultMinus
+			,c.cmpr_desc as rangeText
+			,d.cap_list_name as capListName
+		from (
+				select 
+					(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+					,cap_code
+					,cap_list_no
+					,cap_result as capResult
+				from cap_result a
+				where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								and left(cap_code,2) = '31'
+								group by result_id, a.cap_code, cap_list_no
+								)
+		) a
+		join (
+			select
+				(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+				,cap_code
+				,cap_list_no
+				,cap_result as capResult
+			from cap_result a
+			where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								and left(cap_code,2) = '32'
+								group by result_id, a.cap_code, cap_list_no
+								)
+		) b
+		on a.seq_no = b.seq_no
+		join cap_cmpr_desc c
+		on a.seq_no = c.seq_no
+		join (
+				select 
+					(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+					,* 
+				from cap_list where left(cap_code,2) = '33'
+		) d
+		on a.seq_no = d.seq_no
+		order by a.seq_no
+	</select>
+	<select id="getCmprDesc" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+		select
+			a.seq_no as seqNo
+			,a.capResult as capResultA
+			,b.capResult as capResultB
+			,(a.capResult - b.capResult) as capResultMinus
+			,c.cmpr_desc as rangeText
+			,d.cap_list_name as capListName
+		from (
+				select 
+					(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+					,cap_code
+					,cap_list_no
+					,cap_result as capResult
+				from cap_result a
+				where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								and left(cap_code,2) = '31'
+								group by result_id, a.cap_code, cap_list_no
+								)
+		) a
+		join (
+			select
+				(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+				,cap_code
+				,cap_list_no
+				,cap_result as capResult
+			from cap_result a
+			where a.seq_no in(
+								select 
+									max(seq_no) as seq_no
+								from cap_result a
+								where a.result_id = #{id}
+								and left(cap_code,2) = '32'
+								group by result_id, a.cap_code, cap_list_no
+								)
+		) b
+		on a.seq_no = b.seq_no
+		join cap_cmpr_desc c
+		on a.seq_no = c.seq_no
+		join (
+				select 
+					(row_number() over(ORDER BY cap_code, cap_list_no)) seq_no
+					,* 
+				from cap_list where left(cap_code,2) = '33'
+		) d
+		on a.seq_no = d.seq_no
+		order by (a.capResult - b.capResult)
+	</select>
+	<select id="resultDesc" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select 
+			case when measu_id = 1 then '디지털 혁신을 시작하지 않았거나<br> 관심이 미흡한 단계'
+			when  measu_id = 2 then '디지털 혁신에 관심을 보이고, 과제를 <br>탐색하나 체계적인 계획이 미흡한 단계'
+			when  measu_id = 3 then '디지털 혁신에 대한 계획을 수립하고, <br>여러 시도를 하며 활동이 이루어지는 단계'
+			when  measu_id = 4 then '디지털 혁신과제에 대한 실행이 <br>안정화되고, 특정 부분에서 성과가 <br>가시화되는 단계'
+			when  measu_id = 5 then '높은 수준의 시장선도형 디지털 혁신이 <br>이루어지고 성과향상이 가속화되는 단계' end as resultAvg
+			,range_text as rangeText
+			,measu_id as id
+		from cap_measu_range
+		where start_value < #{resultAvgSum}
+		and end_value >= #{resultAvgSum}
+	]]>
+	</select>
+	<select id="getMatrix" parameterType="kr.co.kpcdt.model.AbilityEvl" resultType="kr.co.kpcdt.model.AbilityEvl">
+	<![CDATA[
+		select 
+			matrix_name as capListName
+			,matrix_result as rangeText 
+		from cap_matrix_analysis
+		where matrix_code = #{capCode}
+		and matrix_scorex_start < #{matrixScoreX}
+		and matrix_scorex_end >= #{matrixScoreX}
+		and matrix_scorey_start < #{matrixScoreY}
+		and matrix_scorey_end >= #{matrixScoreY}
+	]]>
+	</select>
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.kpcdt.dao.MemberDAO">
+	<!-- 로그인 데이터 -->
+	<select id="IsLogin" resultType="int">
+		SELECT COUNT(*)
+		FROM
+		cap_user
+		WHERE
+		user_id=#{id} AND user_pwd=#{password}
+	</select>
+
+	<select id="IdCheck" resultType="int">
+		SELECT COUNT(*)
+		FROM
+		cap_user
+		WHERE
+		user_id=#{id}
+	</select>
+
+	<select id="getKsicMain"
+		parameterType="kr.co.kpcdt.model.Signup"
+		resultType="kr.co.kpcdt.model.Signup">
+		select main_ksic_code as ksicCode, ksic_kor_name as ksicKorName
+		from ksic_code where ksic_level = 1
+	</select>
+
+	<select id="getKsicSub" parameterType="kr.co.kpcdt.model.Signup"
+		resultType="kr.co.kpcdt.model.Signup">
+		select sub_ksic_code as ksicCode, ksic_kor_name as ksicKorName
+		from ksic_code where ksic_level = 2 and upper_ksic_code = #{ksicCode}
+	</select>
+	
+	<select id="getPassword"
+		parameterType="kr.co.kpcdt.model.Member"
+		resultType="kr.co.kpcdt.model.Member">
+		select user_pwd as password from cap_user where user_id=#{id}
+	</select>
+	
+	<select id="getuserName"
+		parameterType="kr.co.kpcdt.model.Member"
+		resultType="kr.co.kpcdt.model.Member">
+		select user_name as name, user_id as id, user_email as email from cap_user where user_id=#{id}
+	</select>
+
+	<insert id="insertUser">
+		INSERT INTO
+		cap_user
+		VALUES
+		(
+		#{id}, #{password}, #{name}, #{company}, #{companyNo}, #{birth}, #{address},
+		#{email}, #{telNo} ,#{telNoComp}, #{ksicMain}, #{ksicSub}, #{createDate}
+		);
+	</insert>
+</mapper>
