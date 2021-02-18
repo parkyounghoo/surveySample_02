@@ -77,7 +77,7 @@ function jusoCallBack(roadAddrPart1,addrDetail){
 								<th><label>사업자 번호</label></th>
 								<td><input type="text" class="inputTxt" value=""
 									id="companyNo" maxlength="16" name="username"
-									style="width: 190px;"> <span class="txt">사업자 번호를
+									style="width: 190px;"> <span class="txt">
 										입력해주세요.</span></td>
 							</tr>
 							<tr>
