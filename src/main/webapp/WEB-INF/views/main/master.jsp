@@ -71,14 +71,7 @@
 			<div class="t2 slide">
 				<div class="content" style="position:absolute; z-index:2;margin-top: 250px;margin-left: 320px">
 					<div class="col-1">
-						<h1>
-							디지털 트랜스포메이션 역량 측정도구<br> <span style="color: #ecaf00;font-weight: bold">(KPC DT Capability Assessment Toolkit)</span>
-						</h1>
-						<p>
-							조직의 디지털 역량 수준 파악을 위한 설문을 진행합니다.<br> 설문을 통해 디지털 비전과 리더십, 디지털
-							기술과 솔루션,<br> 인적 역량 및 조직문화에 대한 수준 평가가 가능합니다.
-						</p>
-						<a href="#" class="cmmBtn btnLogin" style="background-color: #ecaf00">설문 시작하기</a>
+					
 					</div>
 				</div>
 			</div>
