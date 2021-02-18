@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @Lazy
 @EnableTransactionManagement
-@MapperScan(basePackages = {"kr.co.kpcdt.**.dao"})
+@MapperScan(basePackages = {"kr.co.dt.**.dao"})
 public class MybatisConfig 
 {
 
